@@ -57,8 +57,7 @@ ensure_gitignore() {
   local root
   root=$(git rev-parse --show-toplevel)
   if [[ ! -f "$root/.gitignore" ]]; then
-    echo "Error: .gitignore is missing at the repository root ($root)." >&2
-    exit 1
+    echo "Warning: .gitignore is missing at the repository root ($root)." >&2
   fi
 }
 
@@ -112,7 +111,9 @@ main() {
   ts=$(date +%y%m%d%H%M)
   sanitized=$(echo "$name" \
     | tr '[:upper:]' '[:lower:]' \
-    | sed 's/[^a-z0-9_-]/-/g')
+    | sed 's/[^a-z0-9_-]/-/g' \
+    | sed 's/-\+/-/g' \
+    | sed 's/^-//' | sed 's/-$//')
   new_branch="feat/${sanitized}-${ts}"
 
   # Prevent clobbering an existing branch
