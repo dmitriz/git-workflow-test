@@ -28,7 +28,8 @@ detect_primary_branch() {
   elif git show-ref --verify --quiet refs/remotes/origin/master; then
     echo "master"
   else
-    echo "master" # Default to master if neither is found
+    echo "❌ Neither 'main' nor 'master' found on remote." >&2
+    exit 1
   fi
 }
 
@@ -49,10 +50,15 @@ main() {
   ensure_git_repo
   require_clean_branch
 
-  if ! command -v pnpm &>/dev/null; then
-    echo "❌ pnpm not found. Please install pnpm to continue." >&2
-    exit 1
-  fi
+    if ! command -v pnpm &>/dev/null; then
+      echo "❌ pnpm not found. Please install pnpm to continue." >&2
+      exit 1
+    fi
+
+    if ! command -v gh &>/dev/null; then
+      echo "❌ GitHub CLI (gh) not found. Please install gh to continue." >&2
+      exit 1
+    fi
 
   local branch primary_branch
   branch=$(get_current_branch)
@@ -76,11 +82,14 @@ main() {
   git fetch --all --prune --quiet || echo "⚠️ Failed to fetch remotes, continuing anyway"
 
   echo "🔁 Creating PR to '$primary_branch' and enabling auto-merge..."
-  set +e
-  # First try creating PR with label, and if that fails, try without label
-  pr_output=$(gh pr create --fill --base "$primary_branch" --head "$branch" --label automerge 2>&1)
-  pr_status=$?
-  
+  if [ $pr_status -ne 0 ] && echo "$pr_output" | grep -q "not found"; then
+    echo "⚠️ Label 'automerge' not found, creating PR without label..."
+    pr_output=$(gh pr create --fill --base "$primary_branch" --head "$branch" 2>&1)
+    pr_status=$?
+  else
+    echo "❌ Failed to create PR: $pr_output" >&2
+    exit $pr_status
+  fi
   # If failed due to missing label, try again without the label
   if [ $pr_status -ne 0 ] && echo "$pr_output" | grep -q "not found"; then
     echo "⚠️ Label 'automerge' not found, creating PR without label..."
