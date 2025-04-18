@@ -56,9 +56,14 @@ detect_primary_branch() {
 ensure_gitignore() {
   local root
   root=$(git rev-parse --show-toplevel)
-  if [[ ! -f "$root/.gitignore" ]]; then
-    echo "Warning: .gitignore is missing at the repository root ($root)." >&2
+  if [[ -z "$root" ]]; then
+    echo "Error: Could not determine repository root." >&2
+    exit 1
   fi
+  if [[ ! -f "$root/.gitignore" ]]; then
+    exit 1
+  fi
+  if [[ ! -f "$root/.gitignore" ]]; then
 }
 
 # 4. Ensure no unstaged or staged changes exist
@@ -117,10 +122,12 @@ main() {
   new_branch="feat/${sanitized}-${ts}"
 
   # Prevent clobbering an existing branch
-  if git show-ref --verify --quiet "refs/heads/$new_branch"; then
-    echo "Error: Branch '$new_branch' already exists." >&2
-    exit 1
-  fi
+  # Create and switch to the new branch from the primary
+  git checkout "$primary"
+  git fetch origin "$primary"
+  git pull --rebase origin "$primary"
+  git checkout -b "$new_branch"
+  echo "✅ Created and switched to branch '$new_branch' from '$primary'."
 
   # Create and switch to the new branch from the primary
   git checkout "$primary"
