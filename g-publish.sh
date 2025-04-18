@@ -23,7 +23,7 @@ ensure_git_repo() {
 
 # Ensure clean working tree
 require_clean_branch() {
-  if ! git diff --quiet || ! git diff --cached --quiet; then
+  if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
     echo "❌ You have uncommitted changes. Please commit or stash them first." >&2
     exit 1
   fi
