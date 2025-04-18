@@ -77,8 +77,17 @@ main() {
 
   echo "🔁 Creating PR to '$primary_branch' and enabling auto-merge..."
   set +e
+  # First try creating PR with label, and if that fails, try without label
   pr_output=$(gh pr create --fill --base "$primary_branch" --head "$branch" --label automerge 2>&1)
   pr_status=$?
+  
+  # If failed due to missing label, try again without the label
+  if [ $pr_status -ne 0 ] && echo "$pr_output" | grep -q "not found"; then
+    echo "⚠️ Label 'automerge' not found, creating PR without label..."
+    pr_output=$(gh pr create --fill --base "$primary_branch" --head "$branch" 2>&1)
+    pr_status=$?
+  fi
+  
   set -e
   if [ $pr_status -ne 0 ]; then
     if echo "$pr_output" | grep -q "already exists"; then
