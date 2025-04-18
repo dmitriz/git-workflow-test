@@ -61,11 +61,31 @@ main() {
   fi
 
   echo "🔄 Fetching latest from remote..."
-  git fetch origin main --quiet || echo "⚠️ Failed to fetch main branch, continuing anyway"
+  git fetch --all --prune --quiet || echo "⚠️ Failed to fetch remotes, continuing anyway"
 
   echo "🔁 Creating PR to 'main' and enabling auto-merge..."
-  gh pr create --fill --label automerge --base main || echo "⚠️ PR may already exist."
-  gh pr merge --squash --auto || echo "⚠️ Auto-merge may have failed. Check GitHub."
+  set +e
+  pr_output=$(gh pr create --fill --base main --head "$branch" --label automerge 2>&1)
+  pr_status=$?
+  set -e
+  if [ $pr_status -ne 0 ]; then
+    if echo "$pr_output" | grep -q "already exists"; then
+      echo "⚠️ A PR for branch '$branch' already exists."
+    else
+      echo "❌ Failed to create PR: $pr_output" >&2
+      exit $pr_status
+    fi
+  fi
+
+  echo "🔀 Enabling auto-merge on PR..."
+  set +e
+  merge_output=$(gh pr merge --squash --auto 2>&1)
+  merge_status=$?
+  set -e
+  if [ $merge_status -ne 0 ]; then
+    echo "❌ Failed to enable auto-merge: $merge_output" >&2
+    exit $merge_status
+  fi
 
   echo "✅ Publish complete for '$branch'."
 }
