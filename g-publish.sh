@@ -21,6 +21,17 @@ ensure_git_repo() {
   fi
 }
 
+# Detect primary branch (main or master)
+detect_primary_branch() {
+  if git show-ref --verify --quiet refs/remotes/origin/main; then
+    echo "main"
+  elif git show-ref --verify --quiet refs/remotes/origin/master; then
+    echo "master"
+  else
+    echo "master" # Default to master if neither is found
+  fi
+}
+
 # Ensure clean working tree
 require_clean_branch() {
   if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
@@ -43,8 +54,9 @@ main() {
     exit 1
   fi
 
-  local branch
+  local branch primary_branch
   branch=$(get_current_branch)
+  primary_branch=$(detect_primary_branch)
 
   echo "📦 Installing deps via pnpm..."
   pnpm install
@@ -63,9 +75,9 @@ main() {
   echo "🔄 Fetching latest from remote..."
   git fetch --all --prune --quiet || echo "⚠️ Failed to fetch remotes, continuing anyway"
 
-  echo "🔁 Creating PR to 'main' and enabling auto-merge..."
+  echo "🔁 Creating PR to '$primary_branch' and enabling auto-merge..."
   set +e
-  pr_output=$(gh pr create --fill --base main --head "$branch" --label automerge 2>&1)
+  pr_output=$(gh pr create --fill --base "$primary_branch" --head "$branch" --label automerge 2>&1)
   pr_status=$?
   set -e
   if [ $pr_status -ne 0 ]; then
