@@ -12,8 +12,8 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
 fi
 
 # Publish workflow
-npm ci
-npx ava
+pnpm ci
+pnpm test
 
 target_branch=$(git rev-parse --abbrev-ref HEAD)
 
