@@ -38,6 +38,11 @@ main() {
   ensure_git_repo
   require_clean_branch
 
+  if ! command -v pnpm &>/dev/null; then
+    echo "❌ pnpm not found. Please install pnpm to continue." >&2
+    exit 1
+  fi
+
   local branch
   branch=$(get_current_branch)
 
