@@ -104,8 +104,12 @@ main() {
   merge_status=$?
   set -e
   if [ $merge_status -ne 0 ]; then
-    echo "❌ Failed to enable auto-merge: $merge_output" >&2
-    exit $merge_status
+    if echo "$merge_output" | grep -q "Protected branch rules not configured"; then
+      echo "⚠️ Auto-merge not enabled for this repository. You'll need to merge manually."
+    else
+      echo "❌ Failed to enable auto-merge: $merge_output" >&2
+      # Not exiting with error as this is optional
+    fi
   fi
 
   echo "✅ Publish complete for '$branch'."
