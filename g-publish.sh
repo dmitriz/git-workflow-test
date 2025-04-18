@@ -60,6 +60,9 @@ main() {
     exit 0
   fi
 
+  echo "🔄 Fetching latest from remote..."
+  git fetch origin main --quiet || echo "⚠️ Failed to fetch main branch, continuing anyway"
+
   echo "🔁 Creating PR to 'main' and enabling auto-merge..."
   gh pr create --fill --label automerge --base main || echo "⚠️ PR may already exist."
   gh pr merge --squash --auto || echo "⚠️ Auto-merge may have failed. Check GitHub."
