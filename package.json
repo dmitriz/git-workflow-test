@@ -11,6 +11,6 @@
   "license": "ISC",
   "packageManager": "pnpm@10.8.1",
   "dependencies": {
-    "ava": "^6.2.0"
+    "ava": "^8.0.0"
   }
 }
